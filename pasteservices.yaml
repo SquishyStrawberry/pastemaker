@@ -1,0 +1,14 @@
+---
+
+pasteofcode:
+    name: "Paste of Code"
+    url: "http://paste.ofcode.org"
+    method: "POST"
+    result_in: "url"
+    method_options:
+        payload:
+            code: "{file_contents}"
+            language: "{options[language]}"
+            notabot: "most_likely"
+    required_options: ["language"]
+    constants: {}
