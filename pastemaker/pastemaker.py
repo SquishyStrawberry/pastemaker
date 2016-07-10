@@ -25,11 +25,15 @@ def create_paste(pastebins, name, filename, options):
         file_contents = fobj.read()
     if paste_method == "POST":
         payload = method_options["payload"]
-        # `dict(payload)` is needed to copy the dictionary.
-        for key, value in dict(payload).items():
-            payload[key] = value.format(file_contents=file_contents,
-                                        options=options,
-                                        constants=paste_service["constants"])
+        if isinstance(payload, str):
+            payload = payload.format(file_contents=file_contents,
+                                     options=options,
+                                     constants=paste_service["constants"])
+        else:
+            for key, value in dict(payload).items():
+                payload[key] = value.format(file_contents=file_contents,
+                                            options=options,
+                                            constants=paste_service["constants"])
         response = requests.post(paste_service["url"], data=payload)
     elif paste_method == "GET":
         parameters = method_options["parameters"]
