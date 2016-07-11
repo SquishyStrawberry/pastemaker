@@ -5,7 +5,7 @@ import yaml
 USER_AGENT = "PasteMaker"
 
 
-def create_paste(pastebins, name, filename, options):
+def create_paste(pastebins, name, filename, flags):
     """
     Create a paste of `filename` with the paste service `name`.
     All pastebin "specifications" are taken from `pastebins`, which should be
@@ -14,41 +14,42 @@ def create_paste(pastebins, name, filename, options):
     """
     paste_service = pastebins[name]
     paste_method = paste_service["method"]
-    paste_result_in = paste_service["result_in"]
+    paste_result_parsing = paste_service["result_parsing"]
     method_options = paste_service["method_options"]
 
-    for option in paste_service["required_options"]:
-        if option not in options:
-            raise ValueError("Missing option {!r}!".format(option))
+    for flag in paste_service["required_flags"]:
+        if flag not in flags:
+            raise ValueError("Missing option {!r}!".format(flag))
+    for flag, default_value in paste_service["optional_flags"].items():
+        flags.setdefault(flag, default_value)
+
+    def _format(text, **extra):
+        return text.format(file_contents=file_contents,
+                           flags=flags,
+                           constants=paste_service["constants"],
+                           **extra)
 
     with open(filename) as fobj:
         file_contents = fobj.read()
     if paste_method == "POST":
         payload = method_options["payload"]
         if isinstance(payload, str):
-            payload = payload.format(file_contents=file_contents,
-                                     options=options,
-                                     constants=paste_service["constants"])
+            payload = _format(payload)
         else:
             for key, value in dict(payload).items():
-                payload[key] = value.format(file_contents=file_contents,
-                                            options=options,
-                                            constants=paste_service["constants"])
+                payload[key] = _format(value)
         response = requests.post(paste_service["url"], data=payload)
     elif paste_method == "GET":
         parameters = method_options["parameters"]
         for key, value in dict(parameters).items():
-            parameters[key] = value.format(file_contents=file_contents,
-                                           options=options,
-                                           constants=paste_service["constants"])
+            parameters[key] = _format(value)
         response = requests.get(paste_service["url"], params=parameters)
     else:
         raise ValueError("Unknown paste method {!r}!".format(paste_method))
     response.raise_for_status()
-    if paste_result_in == "page":
-        return response.text
-    elif paste_result_in == "url":
-        return response.url
+    if paste_result_parsing["method"] == "url":
+        return paste_result_parsing["format"].format(url=response.url)
+    elif paste_result_parsing["json"]:
+        return paste_result_parsing["method"].format_map(response.json())
     else:
-        raise ValueError("Could not find result URL, was meant to look in"
-                         " {!r}".format(paste_result_in))
+        raise ValueError("Could not find result URL!")

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import os
 import sys
 
-from getopt import gnu_getopt as getopt
+from getopt import gnu_getopt
 
 import yaml
 
@@ -15,12 +14,13 @@ def main():
         sys.exit(1)
     with open("pasteservices.yaml") as pasteservices_fobj:
         paste_services = yaml.safe_load(pasteservices_fobj)
-    required_options = paste_services[sys.argv[1]]["required_options"]
-    options = getopt(sys.argv[1:], "", [i + "=" for i in required_options])[0]
+    needed_flags = (paste_services[sys.argv[1]]["required_flags"] +
+                    paste_services[sys.argv[1]]["optional_flags"])
+    flags = gnu_getopt(sys.argv[1:], "", [i + "=" for i in needed_flags])[0]
     print(create_paste(paste_services,
                        sys.argv[1],
                        sys.argv[2],
-                       dict((k[2:], v) for k, v in options)))
+                       dict((k[2:], v) for k, v in flags)))
 
 if __name__ == "__main__":
     main()

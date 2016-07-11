@@ -4,11 +4,28 @@ pasteofcode:
     name: "Paste of Code"
     url: "http://paste.ofcode.org"
     method: "POST"
-    result_in: "url"
     method_options:
         payload:
             code: "{file_contents}"
             language: "{options[language]}"
             notabot: "most_likely"
-    required_options: ["language"]
+    required_flags: ["language"]
+    optional_flags: {}
     constants: {}
+    result_parsing:
+        method: "url"
+        format: "{url}"
+
+hastebin:
+    name: "Hastebin"
+    url: "http://hastebin.com/documents"
+    method: "POST"
+    method_options:
+        payload: "{file_contents}"
+    required_flags: []
+    optional_flags:
+        extension: "txt"
+    constants: {}
+    result_parsing:
+        method: "json"
+        format: "http://hastebin.com/{key}"
